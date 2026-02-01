@@ -31,11 +31,20 @@ switch ($action) {
             echo json_encode(["status" => "error", "message" => "Ràng buộc khóa ngoại"]);
         }
         break;
-     // api_user.php
-    case 'read':
-     $stmt = $pdo->query("SELECT id_nguoidung, ten_dang_nhap, ho_ten, email, vai_tro FROM NguoiDung");
-     $users = $stmt->fetchAll();
-     echo json_encode($users);
-     break;
+    // Trong file api_user.php, phần case 'read':
+case 'read':
+    $search = $_GET['search'] ?? '';
+    if ($search !== '') {
+        // Tìm kiếm theo Họ tên hoặc Email
+        $sql = "SELECT id_nguoidung, ten_dang_nhap, ho_ten, email, vai_tro 
+                FROM NguoiDung 
+                WHERE ho_ten LIKE ? OR email LIKE ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(["%$search%", "%$search%"]);
+    } else {
+        $stmt = $pdo->query("SELECT id_nguoidung, ten_dang_nhap, ho_ten, email, vai_tro FROM NguoiDung");
+    }
+    echo json_encode($stmt->fetchAll());
+    break;
 }
 ?>
