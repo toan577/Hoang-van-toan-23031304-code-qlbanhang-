@@ -107,6 +107,14 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-md-4 ms-auto">
+        <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Tìm tên hoặc email...">
+        </div>
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const API_URL = 'api_user.php';
@@ -159,21 +167,22 @@ window.onload = function() {
     loadUsers();
 };
 
-function loadUsers() {
-    fetch('api_user.php?action=read')
-        .then(response => response.json())
+// 1. Cập nhật hàm loadUsers
+function loadUsers(query = '') {
+    fetch(`api_user.php?action=read&search=${encodeURIComponent(query)}`)
+        .then(res => res.json())
         .then(data => {
             const tableBody = document.querySelector('tbody');
-            tableBody.innerHTML = ''; // Xóa dữ liệu cũ (nếu có) trước khi nạp mới
+            tableBody.innerHTML = ''; 
+
+            if (data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không tìm thấy người dùng nào.</td></tr>';
+                return;
+            }
 
             data.forEach(user => {
-                // Xác định màu sắc cho Badge dựa trên vai trò
-                let badgeClass = 'bg-success';
-                if (user.vai_tro === 'admin') badgeClass = 'bg-danger';
-                if (user.vai_tro === 'nhanvien') badgeClass = 'bg-primary';
-
-                // Tạo dòng mới cho bảng
-                const row = `
+                let badgeClass = user.vai_tro === 'admin' ? 'bg-danger' : (user.vai_tro === 'nhanvien' ? 'bg-primary' : 'bg-success');
+                tableBody.innerHTML += `
                     <tr>
                         <td>${user.id_nguoidung}</td>
                         <td><strong>${user.ho_ten}</strong></td>
@@ -181,21 +190,19 @@ function loadUsers() {
                         <td>${user.email}</td>
                         <td><span class="badge ${badgeClass} role-badge">${user.vai_tro}</span></td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-outline-secondary me-1" 
-                                onclick="showEditModal(${user.id_nguoidung}, '${user.ho_ten}', '${user.email}', '${user.vai_tro}')">
-                                Sửa
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="executeDelete(${user.id_nguoidung})">
-                                Xóa
-                            </button>
+                            <button class="btn btn-sm btn-outline-secondary me-1" onclick="showEditModal(${user.id_nguoidung}, '${user.ho_ten}', '${user.email}', '${user.vai_tro}')">Sửa</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="executeDelete(${user.id_nguoidung})">Xóa</button>
                         </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
+                    </tr>`;
             });
-        })
-        .catch(error => console.error('Lỗi khi tải dữ liệu:', error));
+        });
 }
+
+// 2. Lắng nghe sự kiện gõ phím vào ô tìm kiếm
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const keyword = e.target.value;
+    loadUsers(keyword); // Gọi lại hàm load với từ khóa mới
+});
 </script>
 </body>
 </html>
